@@ -2,7 +2,7 @@ name: C++ graph checks
 on:
   pull_request:
   push:
-    branches: [review/graph-correctness-and-docs-20260918]
+    branches: [main]
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -20,3 +20,7 @@ jobs:
           ./graph_demo CitiesG.csv > /tmp/cities-graph.txt
           grep -q 'Vertices: 7, edges: 10' /tmp/sample-graph.txt
           grep -q 'Vertices: 14,' /tmp/cities-graph.txt
+      - name: Run regression checks with undefined-behavior sanitizer
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Wpedantic -fsanitize=undefined -fno-sanitize-recover=all -I. tests/graph_tests.cpp Graphs.cpp -o graph_tests_ubsan
+          ./graph_tests_ubsan

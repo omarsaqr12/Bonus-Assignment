@@ -1,249 +1,210 @@
-// FILE: graphs.cpp
-// Graph Library Implementation File for Asn 6
+#include "Graphs.h"
 
-#include <fstream>		// For reading file from disk
-#include <iostream>
-#include <string>		// For file name
+#include <algorithm>
+#include <array>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
-#include <limits.h>
-#include "Edge.h"		// Deinition of an Edge
 
-using namespace std;
-
-// Constructor
-Graphs::Graphs()
-{
-	E = V = order = 0;
+namespace {
+std::string trim(const std::string& text) {
+    const auto first = text.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return "";
+    const auto last = text.find_last_not_of(" \t\r\n");
+    return text.substr(first, last - first + 1);
 }
 
-// Destructor
-Graphs::~Graphs()
-{
-}
-
-
-// Map vertex number (0,1,2,..) to (A,B,C,..)
-char Graphs::Vname(const int s) const
-{
-	return char(s+65);
-}
-
-// Get Graph from text File (file name is stored in string fname)
-// Graph is stored in adjacency matrix
-void Graphs::getGraph(string fname)		
-{
-   // Local data ...
-	weightType wi;
-	ifstream source;
-	source.open("TestG.csv"); 
-	    vector<vector<string>>vec;
-string line;
-while (getline(source,line))
-{
-   stringstream inputString(line);
- vector<string>ve;
- string x;
-    while(getline(inputString,x,',')){
-ve.push_back(x);
+std::vector<std::string> csvFields(const std::string& line) {
+    std::vector<std::string> fields;
+    std::string field;
+    bool quoted = false;
+    for (std::size_t i = 0; i < line.size(); ++i) {
+        const char c = line[i];
+        if (c == '"') {
+            if (quoted && i + 1 < line.size() && line[i + 1] == '"') {
+                field += '"';
+                ++i;
+            } else {
+                quoted = !quoted;
+            }
+        } else if (c == ',' && !quoted) {
+            fields.push_back(trim(field));
+            field.clear();
+        } else {
+            field += c;
+        }
     }
-    vec.push_back(ve);
-    ve.clear();
-
-}
-for (int i = 2; i < vec.size(); i++)
-{
- for (int j =1; j < vec[0].size(); j++)
- {
-	
-	vec[i][j].erase(0,1);
-vec[i][j].erase(vec[i][j].length()-1,1);
-	int d=stoi(vec[i][j]);
-	AdjMatrix[i-2][j-1]=d;
- }
- 
+    if (quoted) throw std::runtime_error("Unclosed CSV quote");
+    fields.push_back(trim(field));
+    return fields;
 }
 
-	V=vec.size()-2;
-	getEdges();
-}
-
-// Display Adjacency Matrix
-void Graphs::dispGraph() const
-{
-	int i,j;
-	cout<<"Adjacency Matrix\n";
-	for(i=0; i<V; i++)
-	{
-		for(j=0; j<V; j++)
-			cout<< setw(3)<< AdjMatrix[i][j] << " ";
-		cout<< endl;
-	}
-}
-
-// Get Non-Zero edges from adjacency matrix
-// and store them in array edges[]. 
-void Graphs::getEdges()			
-{
-	int r , c;
-	int i = 0;
-	weightType weight;
-
-	// Only examine weights above the diagonal 
-	for (r = 0; r <= V-2; r++)
-		for (c = r+1; c <= V-1; c++)
-		{
-			weight = AdjMatrix[r][c];
-			if (weight > 0)
-			{
-				// save (r,c,weight) in edges[i]
-				edges[i].u = r;
-				edges[i].v = c;
-				edges[i].w = weight;
-				i++;
-			}
-		}
-
-	E = i;		// Number of non-zero edges
-	
-}
-
-// Get number of vertices (V)	
-int Graphs::No_of_Verices() const 				
-{
-	return V;
-}
-
-// Get Number of Non-zero edges (E)
-int Graphs::No_of_Edges() const 					
-{
-	return E;
-}
-
-// Output an edge (e): Vertex names and weight
-void Graphs::printEdge(Edge e) const 			
-{
-	cout << Vname(e.u) << " " << Vname(e.v) << " " << e.w << endl;
-}
-
-// Display Graph Edges
-void Graphs::dispEdges() const
-{
-	cout<<"Graph Edges\n";
-	for (int i = 0; i < E; i++) 
-		printEdge(edges[i]);
-}
-
-// Shortest paths from node s
-// uses Dijkstra's Algorithm
-void Graphs::shPath(int src)
-{
-	    int dist[V]; // The output array.  dist[i] will hold the
-                 // shortest
-    // distance from src to i
- 
-    bool sptSet[V]; // sptSet[i] will be true if vertex i is
-                    // included in shortest
-    // path tree or shortest distance from src to i is
-    // finalized
- 
-    // Initialize all distances as INFINITE and stpSet[] as
-    // false
-    for (int i = 0; i < V; i++)
-        dist[i] = INT_MAX, sptSet[i] = false;
- 
-    // Distance of source vertex from itself is always 0
-    dist[src] = 0;
- 
-    // Find shortest path for all vertices
-    for (int count = 0; count < V - 1; count++) {
-        // Pick the minimum distance vertex from the set of
-        // vertices not yet processed. u is always equal to
-        // src in the first iteration.
-        int u = minDistance(dist, sptSet);
- 
-        // Mark the picked vertex as processed
-        sptSet[u] = true;
- 
-        // Update dist value of the adjacent vertices of the
-        // picked vertex.
-        for (int v = 0; v < V; v++)
- 
-            // Update dist[v] only if is not in sptSet,
-            // there is an edge from u to v, and total
-            // weight of path from src to  v through u is
-            // smaller than current value of dist[v]
-            if (!sptSet[v] && AdjMatrix[u][v]
-                && dist[u] != INT_MAX
-                && dist[u] + AdjMatrix[u][v] < dist[v])
-                dist[v] = dist[u] + AdjMatrix[u][v];
+int parseWeight(const std::string& field) {
+    std::size_t consumed = 0;
+    int weight = 0;
+    try {
+        weight = std::stoi(field, &consumed);
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid edge weight: " + field);
     }
- 
-    // print the constructed distance array
-    printSolution(dist);
-
+    if (consumed != field.size() || weight < 0)
+        throw std::runtime_error("Invalid non-negative edge weight: " + field);
+    return weight;
 }
+} // namespace
 
-// Print path (vertex names) from source (s) to destination (i)
-void Graphs::printPath(int s, int i) const
-{
-	if(i==s){cout<<Vname(s);}
-	else{
-		printPath(s,via[i]);cout<<Vname(i);
-	}
+Graphs::Graphs() : V(0), E(0), order(0) {
+    for (int i = 0; i < Vmax; ++i) {
+        val[i] = 0;
+        via[i] = -1;
+        distance[i] = std::numeric_limits<int>::max();
+        processed[i] = false;
+        for (int j = 0; j < Vmax; ++j) AdjMatrix[i][j] = 0;
+    }
 }
+Graphs::~Graphs() = default;
 
-// Node Visit Function
-void Graphs::visit(int k)
-{ 
-	val[k]=++order;
-for (int i = 0; i < 7; i++)
-{
-	if (AdjMatrix[k][i]!=0){
-if(val[i]==-2)
-{
-visit(i);
-}
-	}
-
-	
+char Graphs::Vname(const int s) const {
+    if (s < 0 || s >= V || s >= 26) throw std::out_of_range("Vertex index");
+    return static_cast<char>('A' + s);
 }
 
+void Graphs::getGraph(std::string fname) {
+    std::ifstream source(fname);
+    if (!source) throw std::runtime_error("Cannot open graph file: " + fname);
+    std::string title, heading;
+    if (!std::getline(source, title) || !std::getline(source, heading))
+        throw std::runtime_error("Graph CSV requires a title and header row");
+    const auto columns = csvFields(heading);
+    if (columns.size() < 2 || columns[0] != "City")
+        throw std::runtime_error("Expected City,A,B,... graph header");
+    const int vertices = static_cast<int>(columns.size()) - 1;
+    if (vertices > Vmax || vertices > 26)
+        throw std::runtime_error("Graph exceeds supported A-Z vertex labels");
+    for (int i = 0; i < vertices; ++i)
+        if (columns[i + 1] != std::string(1, static_cast<char>('A' + i)))
+            throw std::runtime_error("Unexpected vertex column order");
+
+    std::array<std::array<int, Vmax>, Vmax> parsed{};
+    std::string line;
+    for (int row = 0; row < vertices; ++row) {
+        if (!std::getline(source, line)) throw std::runtime_error("Missing graph row");
+        const auto cells = csvFields(line);
+        if (cells.size() != columns.size() ||
+            cells[0] != std::string(1, static_cast<char>('A' + row)))
+            throw std::runtime_error("Wrong column count or vertex row label");
+        for (int col = 0; col < vertices; ++col)
+            parsed[row][col] = parseWeight(cells[col + 1]);
+    }
+    while (std::getline(source, line))
+        if (!trim(line).empty()) throw std::runtime_error("Unexpected extra graph row");
+    for (int i = 0; i < vertices; ++i) {
+        if (parsed[i][i] != 0) throw std::runtime_error("Diagonal must be zero");
+        for (int j = i + 1; j < vertices; ++j)
+            if (parsed[i][j] != parsed[j][i])
+                throw std::runtime_error("Undirected matrix must be symmetric");
+    }
+    // Commit only after validation, so malformed input leaves the old graph intact.
+    V = vertices;
+    for (int i = 0; i < V; ++i)
+        for (int j = 0; j < V; ++j) AdjMatrix[i][j] = parsed[i][j];
+    getEdges();
 }
 
-// Depth First Search Traversal
-void Graphs::DFS()									
-{ 
-int k;
-for ( k = 0; k<7; k++)
-{
-val[k]=-2;
-}
-for ( k = 1; k < 7; k++)
-{
-	if(val[k]==-2){visit(k);}
+void Graphs::dispGraph() const {
+    std::cout << "Adjacency Matrix\n";
+    for (int i = 0; i < V; ++i) {
+        for (int j = 0; j < V; ++j)
+            std::cout << std::setw(3) << AdjMatrix[i][j] << ' ';
+        std::cout << '\n';
+    }
 }
 
+void Graphs::getEdges() {
+    E = 0;
+    for (int i = 0; i < V; ++i)
+        for (int j = i + 1; j < V; ++j)
+            if (AdjMatrix[i][j] > 0) edges[E++] = Edge{i, j, AdjMatrix[i][j]};
 }
-int Graphs:: minDistance(int dist[], bool sptSet[])
-{
- 
-    // Initialize min value
-    int min = INT_MAX, min_index;
- 
-    for (int v = 0; v < 7; v++)
-        if (sptSet[v] == false && dist[v] <= min)
-            min = dist[v], min_index = v;
- 
-    return min_index;
+int Graphs::No_of_Verices() const { return V; }
+int Graphs::No_of_Edges() const { return E; }
+void Graphs::printEdge(Edge e) const {
+    std::cout << Vname(e.u) << ' ' << Vname(e.v) << ' ' << e.w << '\n';
 }
-void  Graphs::printSolution(int dist[])
-{
-    cout << "Vertex \t Distance from Source" << endl;
-    for (int i = 0; i < V; i++)
-	   {
-		 char c=i+65;
-        cout << c << " \t\t\t\t" << dist[i] << endl;
-	   }
+void Graphs::dispEdges() const {
+    std::cout << "Graph Edges\n";
+    for (int i = 0; i < E; ++i) printEdge(edges[i]);
+}
+
+int Graphs::minDistance(int dist[], bool sptSet[]) {
+    int selected = -1;
+    for (int i = 0; i < V; ++i)
+        if (!sptSet[i] && dist[i] != std::numeric_limits<int>::max() &&
+            (selected == -1 || dist[i] < dist[selected])) selected = i;
+    return selected;
+}
+
+void Graphs::shPath(int src) {
+    if (src < 0 || src >= V) throw std::out_of_range("Source vertex index");
+    const int inf = std::numeric_limits<int>::max();
+    for (int i = 0; i < V; ++i) {
+        distance[i] = inf;
+        via[i] = -1;
+        processed[i] = false;
+    }
+    distance[src] = 0;
+    for (int step = 0; step < V; ++step) {
+        const int u = minDistance(distance, processed);
+        if (u == -1) break; // Remaining vertices are unreachable.
+        processed[u] = true;
+        for (int v = 0; v < V; ++v) {
+            const int weight = AdjMatrix[u][v];
+            if (!processed[v] && weight > 0 && distance[u] <= inf - weight &&
+                distance[u] + weight < distance[v]) {
+                distance[v] = distance[u] + weight;
+                via[v] = u;
+            }
+        }
+    }
+    std::cout << "Shortest Paths from Node " << Vname(src) << '\n';
+    for (int i = 0; i < V; ++i) {
+        if (distance[i] == inf) {
+            std::cout << "unreachable " << Vname(i) << '\n';
+        } else {
+            std::cout << distance[i] << ' ';
+            printPath(src, i);
+            std::cout << '\n';
+        }
+    }
+}
+
+void Graphs::printPath(int src, int dst) const {
+    if (dst != src) {
+        if (via[dst] < 0) throw std::logic_error("Missing predecessor");
+        printPath(src, via[dst]);
+    }
+    std::cout << Vname(dst);
+}
+void Graphs::visit(int k) {
+    val[k] = ++order;
+    std::cout << Vname(k) << ' ';
+    for (int i = 0; i < V; ++i)
+        if (AdjMatrix[k][i] > 0 && val[i] == 0) visit(i);
+}
+void Graphs::DFS() {
+    order = 0;
+    for (int i = 0; i < V; ++i) val[i] = 0;
+    std::cout << "DFS: ";
+    for (int i = 0; i < V; ++i)
+        if (val[i] == 0) visit(i);
+    std::cout << '\n';
+}
+void Graphs::printSolution(int dist[]) {
+    std::cout << "Vertex Distance\n";
+    for (int i = 0; i < V; ++i) std::cout << Vname(i) << ' ' << dist[i] << '\n';
 }

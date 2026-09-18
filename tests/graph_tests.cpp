@@ -1,6 +1,5 @@
 #include "Graphs.h"
 
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -14,12 +13,8 @@ void require(bool condition, const std::string& message) {
 std::string paths(Graphs& graph, int start) {
     std::ostringstream buffer;
     auto* previous = std::cout.rdbuf(buffer.rdbuf());
-    try {
-        graph.shPath(start);
-    } catch (...) {
-        std::cout.rdbuf(previous);
-        throw;
-    }
+    try { graph.shPath(start); }
+    catch (...) { std::cout.rdbuf(previous); throw; }
     std::cout.rdbuf(previous);
     return buffer.str();
 }
@@ -44,16 +39,15 @@ int main() {
 
         graph.getGraph("CitiesG.csv");
         require(graph.No_of_Verices() == 14, "larger dataset vertex count");
-        require(paths(graph, 0).find(" N\n") != std::string::npos ||
-                paths(graph, 0).find("N\n") != std::string::npos,
-                "larger graph last vertex reachable");
+        require(paths(graph, 0).find("53 AN\n") != std::string::npos,
+                "larger dataset shortest path A-N");
         graph.DFS();
         require(loadThrows(graph, "tests/no-such-graph.csv"), "missing file must fail");
         require(graph.No_of_Verices() == 14, "failure preserves previously loaded graph");
 
         Graphs disconnected;
         disconnected.getGraph("tests/disconnected.csv");
-        require(disconnected.No_of_Vertices() == 3, "disconnected graph vertex count");
+        require(disconnected.No_of_Verices() == 3, "disconnected graph vertex count");
         require(paths(disconnected, 0).find("unreachable C\n") != std::string::npos,
                 "disconnected vertex must be reported");
         disconnected.DFS();

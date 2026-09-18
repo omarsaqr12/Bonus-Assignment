@@ -1,0 +1,22 @@
+name: C++ graph checks
+on:
+  pull_request:
+  push:
+    branches: [review/graph-correctness-and-docs-20260918]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile demo
+        run: g++ -std=c++17 -Wall -Wextra -Wpedantic -I. main.cpp Graphs.cpp -o graph_demo
+      - name: Compile regression tests
+        run: g++ -std=c++17 -Wall -Wextra -Wpedantic -I. tests/graph_tests.cpp Graphs.cpp -o graph_tests
+      - name: Test algorithms and data loading
+        run: ./graph_tests
+      - name: Smoke test both supplied datasets
+        run: |
+          ./graph_demo TestG.csv > /tmp/sample-graph.txt
+          ./graph_demo CitiesG.csv > /tmp/cities-graph.txt
+          grep -q 'Vertices: 7, edges: 10' /tmp/sample-graph.txt
+          grep -q 'Vertices: 14,' /tmp/cities-graph.txt

@@ -21,7 +21,7 @@ g++ -std=c++17 -Wall -Wextra -Wpedantic -I. tests/graph_tests.cpp Graphs.cpp -o 
 ./graph_tests
 ```
 
-The tests exercise the seven-vertex sample, the supplied fourteen-vertex data, an unreachable vertex, invalid source indices, invalid/missing input, and preservation of the previously loaded graph after a failed load. The tests are not a formal proof of algorithm correctness.
+The tests exercise the seven-vertex sample, the supplied fourteen-vertex data, an unreachable vertex, invalid source indices, invalid/missing input, and preservation of the previously loaded graph after a failed load. GitHub Actions builds and tests on pull requests and pushes to `main`, including a run under an undefined-behavior sanitizer. The tests are not a formal proof of algorithm correctness.
 
 ## Repository map
 
@@ -37,8 +37,8 @@ The tests exercise the seven-vertex sample, the supplied fourteen-vertex data, a
 
 The current loader expects a title row, followed by a `City,A,B,...` header and a square CSV adjacency matrix with matching `A`, `B`, ... row labels. The graph must have 1–26 vertices, zero diagonal, symmetric non-negative integer weights, and 0 for no edge. Because `Vname()` returns a single character, vertex labels beyond Z are not supported even though the legacy storage arrays have capacity for 50 vertices. Edges must have positive weights; zero-weight edges are not represented. Large path sums that exceed the C++ `int` range are not supported.
 
-The implementation uses an adjacency matrix and an O(V²) Dijkstra scan; it is not optimized for large sparse graphs. A disconnected vertex is printed as `unreachable`. The historical Windows executable and IDE files remain in Git history; build from the source above instead of relying on the old binary or machine-specific debugger paths.
+The implementation uses an adjacency matrix and an O(V²) Dijkstra scan; it is not optimized for large sparse graphs. A disconnected vertex is printed as `unreachable`. The historical Windows executable and IDE files remain unchanged; build from the source above instead of relying on the old binary or machine-specific debugger paths.
 
 ## Attribution and provenance
 
-This repository contains course-provided graph/edge scaffolding and assignment data together with the student's implementation. The exact division of authorship within the original scaffolding is not independently established. The review branch changes the code, tests and documentation while retaining the original assignment materials and commit history. No benchmark, independent grading result, or production deployment is claimed.
+This repository contains course-provided graph/edge scaffolding and assignment data together with the student's implementation. The exact division of authorship within the original scaffolding is not independently established. Original assignment materials and Git history are retained. No benchmark, independent grading result, or production deployment is claimed.
